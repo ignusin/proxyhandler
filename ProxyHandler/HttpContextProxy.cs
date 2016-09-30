@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
@@ -33,10 +34,29 @@ namespace ProxyHandler
 
         private async Task PerformCallAsync()
         {
-            using (var httpClient = new HttpClient())
+            var httpClientHandler = new HttpClientHandler()
+            {
+            };
+
+            if (Configuration.ParseGZipAndDeflate)
+            {
+                httpClientHandler.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
+            }
+
+            using (var httpClient = new HttpClient(httpClientHandler))
             {
                 var httpRequestMessage = CreateHttpRequestMessage();
                 var httpResponseMessage = await httpClient.SendAsync(httpRequestMessage);
+
+                if (ContentModifierFactory.HasContentModifiers(httpResponseMessage))
+                {
+                    var contentModifiers = ContentModifierFactory.GetContentModifiers(httpResponseMessage);
+
+                    foreach (var contentModifier in contentModifiers)
+                    {
+                        await contentModifier.ModifyContent(httpResponseMessage);
+                    }
+                }
 
                 await SendResponse(httpResponseMessage);
             }
@@ -44,7 +64,7 @@ namespace ProxyHandler
 
         private string GetRelativeUrl()
         {
-            var appPath = HttpRuntime.AppDomainAppVirtualPath;
+            var appPath = Configuration.IISApplicationVirtualPath;
             var rawUrl = _httpContext.Request.RawUrl;
 
             if (rawUrl.StartsWith(appPath, StringComparison.InvariantCultureIgnoreCase))
@@ -131,6 +151,11 @@ namespace ProxyHandler
 
             foreach (var header in httpResponseMessage.Headers)
             {
+                if (string.Equals("Transfer-Encoding", header.Key, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    continue;
+                }
+
                 foreach (var value in header.Value)
                 {
                     response.AddHeader(header.Key, value);
@@ -142,16 +167,6 @@ namespace ProxyHandler
                 foreach (var value in header.Value)
                 {
                     response.AddHeader(header.Key, value);
-                }
-            }
-
-            if (ContentModifierFactory.HasContentModifiers(httpResponseMessage))
-            {
-                var contentModifiers = ContentModifierFactory.GetContentModifiers(httpResponseMessage);
-
-                foreach (var contentModifier in contentModifiers)
-                {
-                    await contentModifier.ModifyContent(httpResponseMessage);
                 }
             }
 

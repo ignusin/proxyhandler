@@ -10,7 +10,7 @@ namespace ProxyHandler
         private readonly static Dictionary<string, IEnumerable<Type>> _contentModifiersIndex =
             new Dictionary<string, IEnumerable<Type>>()
             {
-                { "TEXT/HTML", new[] { typeof(HttpContextHtmlUrlContentModifier) } }
+                { "TEXT/HTML", new[] { typeof(HtmlUrlContentModifier) } }
             };
 
 

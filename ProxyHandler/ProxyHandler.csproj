@@ -45,7 +45,7 @@
     <Compile Include="ContentModifierFactory.cs" />
     <Compile Include="DefaultConfiguration.cs" />
     <Compile Include="Handler.cs" />
-    <Compile Include="HttpContextHtmlUrlContentModifier.cs" />
+    <Compile Include="HtmlUrlContentModifier.cs" />
     <Compile Include="HttpHeaderUtility.cs" />
     <Compile Include="IConfiguration.cs" />
     <Compile Include="IContentModifier.cs" />
